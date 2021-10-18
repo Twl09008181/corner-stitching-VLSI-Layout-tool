@@ -3,41 +3,34 @@
 #include <iostream>
 
 
-
-// move by apply function "gt" while p is greater than v(t).     
-// move by apply function "ls" while p is less than v(t).
-tile* rush(int p,tile*t,t_move*gt,t_move *ls,t_getF*v){
-    
-    if(t && p < v(t,true)){    // P <  x or P <  y 
-        while(t && p <= v(t,true))
-            t = ls(t);
+// Horizontal/Vertical move   
+tile* Hfind(int x,tile*t){
+    if(t && x < t->x()){
+        while(t && x < t->x())
+            t = t -> bl();
+    }else if(t && x >= t->x() + t->w()){   // point can't lie on right edge , so when x = t->x() + t->w() , it must move.
+        while(t && x >= t->x() + t->w())
+            t = t -> tr();
     }
-    else if(t && p > v(t,false)){
-        while(t && p > v(t,false))
-            t = gt(t);
-    }  
-    //hard part is "=" happend   
-    else {
-        if(v==getyF&&p==t->y())     // vertical move and p = y. (can't lie on bottom edge)
-            t = t->lb();
-        else if(v==getxF&&p==t->x() + t->w())    //horizontal move and p = x + t->w()  (can't lie on right edge)
-            t = t->tr();
+    return t;
+}
+tile* Vfind(int y,tile*t){
+    if(t && y > t->y() + t->h()){
+        while(t && y > t->y() + t->h())
+            t = t -> rt();
+    }else if(t && y <= t->y()){   // point can't lie on bottom edge , so when y = t->y()  , it must move.
+        while(t && y <= t->y())
+            t = t -> lb();
     }
     return t;
 }
 
-// Horizontal/Vertical move   
-tile* Hfind(int x,tile*t){return rush(x,t,tr,bl,getxF);}
-tile* Vfind(int y,tile*t){return rush(y,t,rt,lb,getyF);}
-
 // From "start" to do pointFinding algorithm until find some tile which contain (x,y) point.
 // (x,y) Point is allowed to lie on left/top edge of tile, but is not allowed to lie on right/bottom of tile.       
 // This property make one point only be contained by one tile.   
-
 //hint   x can equal to t->x()  (left edge )  , y can equal to t->y() + t->h()  (top edge )
 // but x can't equal to t->x() + t->w() (right edge) , y can't eqautl to t->y() (bottom edge)
 tile* pointFinding(int x,int y,tile*t){  
-    
     if(t==nullptr){std::cerr<<"erro arg in point Finding\n";exit(1);}
     auto found = [](int x,int y,tile*t){return ( (x >= t->x()) && (x < t->x() + t->w()) && (y > t->y()) && (y <= t->y() + t->h()));};
     while(t&&!found(x,y,t)){

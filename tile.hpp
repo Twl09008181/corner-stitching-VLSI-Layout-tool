@@ -71,8 +71,6 @@ inline tile* bl(tile*t){return t->bl();}
 inline tile* lb(tile*t){return t->lb();}
 inline tile* tr(tile*t){return t->tr();}
 inline tile* rt(tile*t){return t->rt();}
-inline int getxF(tile *t,bool small = true){return small ? t->x() : t->x() + t->w();}
-inline int getyF(tile *t,bool small = true){return small ? t->y() : t->y() + t->h();}
 inline int getx(tile *t){return t->x();}
 inline int gety(tile *t){return t->y();}
 
@@ -92,7 +90,6 @@ inline bool ls(int a,int b){return a < b;}
 
 using cmp = decltype(nls);
 using t_get = decltype(getx);
-using t_getF = decltype(getxF);
 using t_set = decltype(setbl);
 using t_move = decltype(bl);
 

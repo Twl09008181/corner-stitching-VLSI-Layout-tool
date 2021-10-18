@@ -78,7 +78,7 @@ inline tile* rt(tile*t){return t->rt();}
 inline int getx(tile *t){return t->x();}
 inline int gety(tile *t){return t->y();}
 inline int getx2(tile *t){return t->x() + t->w();}
-inline int gety2(tile *t){return t->y() + t->y();}
+inline int gety2(tile *t){return t->y() + t->h();}
 
 inline int getw(tile *t){return t->w();}
 inline int geth(tile *t){return t->h();}

@@ -92,14 +92,14 @@ void updateLeft(tile *origin,tile* partA,tile * partB){
     tile *last = updateNeighbor(partA,origin->bl(),gety2,partA->y() + partA->h(),ngt,rt,settr);
     if(partA!=partB){
         partB->setbl(last);
-        updateNeighbor(partB,last,gety,partB->y() + partB->h(),ls,rt,settr);
+        updateNeighbor(partB,last,gety,partB->y() + partB->h(),ngt,rt,settr);
     }
 }
 void updateBottom(tile *origin,tile* partA,tile * partB){
     tile *last = updateNeighbor(partA,partA->lb(),getx2,partA->x() + partA->w(),ngt,tr,setrt);
     if(partA!=partB){
         partB->setlb(last);  
-        updateNeighbor(partB,last,getx2,partB->x() + partB->w(),ls,tr,setrt);
+        updateNeighbor(partB,last,getx2,partB->x() + partB->w(),ngt,tr,setrt);
     }
 }
 
@@ -193,6 +193,12 @@ tile* insert1(tile*t ,int x,int y,int w,int h)
     for(auto r:rec)delete r;
     return t;
 }
+
+
+
+//還要寫一個merge function
+void merge(std::vector<tile*>tiles);
+void mergeCheck(tile*t); //merge if have same horizontal span.  use lb pointer.
 
 tile* InsertBlock(int id,int x,int y,int w,int h){
     auto SpaceTiles = AreaSearch(x,y,x+w,y+h);

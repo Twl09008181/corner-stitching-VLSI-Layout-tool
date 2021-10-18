@@ -30,6 +30,8 @@ struct tile
     tile* tr()const{return _tr;}
     tile* rt()const{return _rt;}
 
+    bool isSpace()const{return _id<0;}
+
 private:
     int _id; // if = -1 : space tile
     int _x,_y;
@@ -45,9 +47,13 @@ std::ostream& operator<<(std::ostream&os,const tile &t);
 // This property make one point only be contained by one tile.   
 tile* pointFinding(int x,int y);
 
-// Find all tiles cross from (x,y) to (x,0) and return.
-// start is a hint of pointfinding.
-std::vector<tile*> Vsearch(int x,int y);
+
+// left - bottom (x1,y1)   right top (x2,y2)
+// check if this area has any block by checkin maximal horizontal stripes.
+// If has no blocks , return the space tiles in this region    
+// otherwise return empty.     
+std::vector<tile*> AreaSearch(int x1,int y1,int x2,int y2);
+
 
 // Split A tile into two part.    
 // In Vsplit, if left is true, then return left part.

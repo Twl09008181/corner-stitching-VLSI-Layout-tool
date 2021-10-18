@@ -41,23 +41,12 @@ tile* pointFinding(int x,int y){
         if(t && found(x,y,t))break;
         t = Vfind(y,t);//Vertical
     }
-    if(!t){std::cerr<<"erro in point Finding, can't find target!\n";exit(1);}
+    if(!t){std::cerr<<"erro in point Finding, can't find target ("<<x<<","<<y<<")\n";exit(1);}
     Log->addLog(t);
     return t;
 }
 
 
-// Find all tiles cross from (x,y) to (x,0) and return.
-std::vector<tile*> Vsearch(int x,int y){
-    std::vector<tile*>Tiles;
-    tile*t = nullptr;
-    while( y > 0 && (t = pointFinding(x,y))){ 
-        Tiles.push_back(t);
-        y = t->y() - 1;
-    } 
-    if(t)Log->addLog(t);
-    return Tiles;
-}
 
 
 
@@ -135,13 +124,42 @@ tile* Vsplit(tile*t,int x,bool left){
 
 
 
+
+
+// left - bottom (x1,y1)   right top (x2,y2)
+// check if this area has any block by checkin maximal horizontal stripes.
+// If has no blocks , return the space tiles in this region    
+// otherwise return empty.     
+std::vector<tile*> AreaSearch(int x1,int y1,int x2,int y2){
+    std::vector<tile*>Tiles;
+    tile*t1,*t2;
+    bool block = false;
+    while(!block && y2 > y1){  // can't equal
+        t1 = pointFinding(x1,y2);
+        t2 = pointFinding(x2,y2);
+        if(t1 != t2){   // if t1 and t2 are not the same  and t2->x() is smaller than x2 , it must has block tiles in this region!(t2 or t1)      
+            if(t2->x() < x2)
+                block = true;
+        }
+        else if(!t1->isSpace()) // t1 == t2 is block
+            block = true;
+        Tiles.push_back(t1);
+        y2 = t1->y();//move down if no block.
+    }
+    if(block)return {};
+    return Tiles;  //if Tiles = empty : this area has block tile.
+}
+
+
 void InsertBlock(int id,int x,int y,int w,int h){
-    std::vector<tile*>tiles = Vsearch(x, y + h);
+    
 
     //now get tiles , we can split this tiles by some way 
 
     //還需要找出包含top,bottom edge的兩種tile 
     //如果是同一種就是切四刀
+    
+
     
 
 
@@ -154,6 +172,14 @@ int main()
 {
     Log = new userlog(200,200);
     tile* bot = Hsplit(Log->lastLog(),30);
-    tile* lft = Vsplit(bot,100);
-    Vsearch(150,200);
+    // tile* lft = Vsplit(bot,100);
+
+
+    auto tiles = AreaSearch(0,0,199,199);
+
+    for(auto t:tiles)
+    {
+        std::cout<<*t<<"\n";
+    }
+
 }

@@ -153,7 +153,8 @@ std::vector<tile*> AreaSearch(int x1,int y1,int x2,int y2){
             if(t2->x() < x2)
                 block = true;
         }
-        else if(!t1->isSpace()) // t1 == t2 is block
+
+        if(!t1->isSpace())
             block = true;
         Tiles.push_back(t1);
         y2 = t1->y();//move down if no block.
@@ -179,6 +180,7 @@ tile* InsertBlock(int id,int x,int y,int w,int h){
         if(space->x()==x&&space->y()==y&&space->w()==w&&space->h()==h)//exactly same size.
         {
             space->setid(id);
+            Log->addLog(space);
             return space;
         }
         else{//much bigger than this block
@@ -187,9 +189,12 @@ tile* InsertBlock(int id,int x,int y,int w,int h){
             tile* t3 = Vsplit(t2,x,false);delete t2;
             tile* t4 = Vsplit(t3,x+w);delete t3;
             t4->setid(id);
+            Log->addLog(t4);
             return t4;
         }
     }
+
+
 }
 
 
@@ -205,36 +210,19 @@ std::vector<tile*> NeighborTraversal(tile*t,tile*nb,t_get*get,int v,cmp *comp,t_
 
 
 std::set<tile*> getNeighbor(tile*t){
-
     std::set<tile*>nbs;
     if(t->bl())nbs.insert(t->bl());
     if(t->lb())nbs.insert(t->lb());
     if(t->tr())nbs.insert(t->tr());
     if(t->rt())nbs.insert(t->rt());
-    
     auto left = NeighborTraversal(t,t->bl(),gety2,t->y()+t->h(),ngt,::rt);
     auto bottom = NeighborTraversal(t,t->lb(),getx2,t->x()+t->w(),ngt,::tr);
     auto right = NeighborTraversal(t,t->tr(),gety,t->y(),nls,::lb);
     auto top = NeighborTraversal(t,t->rt(),getx,t->x(),nls,::bl);
-
     for(auto l:left)nbs.insert(l);
     for(auto r:right)nbs.insert(r);
     for(auto t:top)nbs.insert(t);
     for(auto b:bottom)nbs.insert(b);
-
-    // showptr(t);
-    // std::cout<<"left : "<<left.size()<<" r :"<<right.size()<<" bot:"<<bottom.size()<<" top :"<<top.size()<<"\n";
-    
-    
-    // nbs.resize(left.size()+bottom.size()+right.size()+top.size());
-
-    // std::copy(left.begin(),left.end(),nbs.begin());
-    // std::copy(bottom.begin(),bottom.end(),nbs.begin() + left.size());
-    // std::copy(right.begin(),right.end(),nbs.begin() + left.size() + bottom.size());
-    // std::copy(top.begin(),top.end(),nbs.begin() + left.size() + bottom.size() + right.size());
-
-
-    // std::cout<<"size = "<<nbs.size()<<"\n";
     return nbs;
 }
 
@@ -247,9 +235,9 @@ int main()
 
 
     tile* b1 = InsertBlock(1,50,40,250,60);
+    tile* b2 = InsertBlock(1,50,40,250,60);
 
-
-    // std::cout<<b1->lb()<<"\n";
+   
 
     auto nbs = getNeighbor(b1);
 

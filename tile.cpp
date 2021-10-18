@@ -6,31 +6,44 @@
 
 // move by apply function "gt" while p is greater than v(t).     
 // move by apply function "ls" while p is less than v(t).
-void rush(int p,tile*t,t_move*gt,t_move *ls,int(*v)(tile*)){
-    if(t && p < v(t)){
-        while(t && p < v(t))
+tile* rush(int p,tile*t,t_move*gt,t_move *ls,t_getF*v){
+    
+    if(t && p < v(t,true)){    // P <  x or P <  y 
+        while(t && p <= v(t,true))
             t = ls(t);
-    }else if(t && p > v(t)){
-        while(t && p > v(t))
-            t = gt(t);
     }
+    else if(t && p > v(t,false)){
+        while(t && p > v(t,false))
+            t = gt(t);
+    }  
+    //hard part is "=" happend   
+    else {
+        if(v==getyF&&p==t->y())     // vertical move and p = y. (can't lie on bottom edge)
+            t = t->lb();
+        else if(v==getxF&&p==t->x() + t->w())    //horizontal move and p = x + t->w()  (can't lie on right edge)
+            t = t->tr();
+    }
+    return t;
 }
 
 // Horizontal/Vertical move   
-void Hfind(int x,tile*t){rush(x,t,tr,bl,getx);}
-void Vfind(int y,tile*t){rush(y,t,rt,lb,gety);}
+tile* Hfind(int x,tile*t){return rush(x,t,tr,bl,getxF);}
+tile* Vfind(int y,tile*t){return rush(y,t,rt,lb,getyF);}
 
 // From "start" to do pointFinding algorithm until find some tile which contain (x,y) point.
-// (x,y) Point is allowed to lie on left/bottom  edge of tile, but is not allowed to lie on right/top of tile.       
+// (x,y) Point is allowed to lie on left/top edge of tile, but is not allowed to lie on right/bottom of tile.       
 // This property make one point only be contained by one tile.   
+
+//hint   x can equal to t->x()  (left edge )  , y can equal to t->y() + t->h()  (top edge )
+// but x can't equal to t->x() + t->w() (right edge) , y can't eqautl to t->y() (bottom edge)
 tile* pointFinding(int x,int y,tile*t){  
     
     if(t==nullptr){std::cerr<<"erro arg in point Finding\n";exit(1);}
-    auto found = [](int x,int y,tile*t){return ( (x >= t->x()) && (x < t->x() + t->w()) && (y >= t->y()) && (y < t->y() + t->h()));};
-    while(!found(x,y,t)){
-        Hfind(x,t);//Horizontal 
+    auto found = [](int x,int y,tile*t){return ( (x >= t->x()) && (x < t->x() + t->w()) && (y > t->y()) && (y <= t->y() + t->h()));};
+    while(t&&!found(x,y,t)){
+        t = Hfind(x,t);//Horizontal 
         if(t && found(x,y,t))break;
-        Vfind(y,t);//Vertical
+        t = Vfind(y,t);//Vertical
     }
     if(!t){std::cerr<<"erro in point Finding, can't find target!\n";exit(1);}
     return t;
@@ -47,21 +60,6 @@ std::vector<tile*> Vsearch(int x,int y,tile*t){
     return Tiles;
 }
 
-
-void InsertBlock(int id,int x,int y,int w,int h){
-    std::vector<tile*>tiles = Vsearch(x, y + h, init);
-
-    //now get tiles , we can split this tiles by some way 
-
-    //還需要找出包含top,bottom edge的兩種tile 
-    //如果是同一種就是切四刀
-    
-
-
-
-
-
-}
 
 
 // show information of tile t , including id,x,y,w,h.    
@@ -123,8 +121,8 @@ tile* Hsplit(tile*t,int y,bool bottom){
 }
 
 tile* Vsplit(tile*t,int x,bool left){
-    tile *RGT = new tile(t->id(),  x    ,t->y(), t->w() + t->x() - x, t->y(), nullptr,nullptr,t->tr(),t->rt());
-    tile *LFT  = new tile(t->id(),t->x() ,t->y(),   x - t->x()       , t->y(), t->bl(),t->lb());
+    tile *RGT = new tile(t->id(),  x    ,t->y(), t->w() + t->x() - x, t->h(), nullptr,nullptr,t->tr(),t->rt());
+    tile *LFT  = new tile(t->id(),t->x() ,t->y(),   x - t->x()       , t->h(), t->bl(),t->lb());
     RGT->setbl(LFT);
     LFT->settr(RGT);
     updateRight(t,RGT,RGT);
@@ -132,6 +130,21 @@ tile* Vsplit(tile*t,int x,bool left){
     updateLeft(t,LFT,LFT);
     updateBottom(t,LFT,RGT);
     return left? LFT:RGT;
+}
+
+
+
+void InsertBlock(int id,int x,int y,int w,int h){
+    std::vector<tile*>tiles = Vsearch(x, y + h, init);
+
+    //now get tiles , we can split this tiles by some way 
+
+    //還需要找出包含top,bottom edge的兩種tile 
+    //如果是同一種就是切四刀
+    
+
+
+
 }
 
 
@@ -150,5 +163,16 @@ int main()
     tile* lft = Vsplit(bot,100);
     std::cout<<*lft<<"\n"<<*lft->tr()<<"\n";
 
+    tile *rgt = lft->tr();
 
+    std::cout<<"rt = "<<*rgt->rt()<<"\n";
+
+    // std::cout<<lft->tr()->x()<<"\n";
+    // std::cout<<"point finding:"<<*pointFinding(0,30,lft)<<"\n";
+    
+    std::cout<<"point finding:"<<*pointFinding(100,30,lft)<<"\n";
+
+    std::cout<<"point finding:"<<*pointFinding(100,60,lft)<<"\n";
+
+    std::cout<<"point finding:"<<*pointFinding(0,200,lft)<<"\n";
 }

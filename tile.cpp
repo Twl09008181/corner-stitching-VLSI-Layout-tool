@@ -107,16 +107,13 @@ void updateBottom(tile* partA,tile * partB){
 tile* Hsplit(tile*t,int y,bool bottom){
     tile *top = new tile(t->id(),t->x(),y, t->w(), t->y() + t->h() - y,nullptr,nullptr,t->tr(),t->rt());
     tile *bot = new tile(t->id(),t->x(),t->y(),t->w(), y - t->y(),t->bl(),t->lb());
-
-    // std::cout<<"top->rt ="<<top->rt()<<"\n";
     top->setlb(bot);
     bot->setrt(top);
-    updateRight(t,top,bot);
-    updateTop(t,top,top);
-    updateLeft(t,bot,top);
-    updateBottom(t,bot,bot);
+    updateRight(top,bot);
+    updateTop(top,top);
+    updateLeft(bot,top);
+    updateBottom(bot,bot);
     Log->addLog(bot);
-    // std::cout<<"top->rt ="<<top->rt()<<"\n";
     return bottom ? bot:top;
 }
 
@@ -125,10 +122,10 @@ tile* Vsplit(tile*t,int x,bool left){
     tile *LFT  = new tile(t->id(),t->x() ,t->y(),   x - t->x()       , t->h(), t->bl(),t->lb());
     RGT->setbl(LFT);
     LFT->settr(RGT);
-    updateRight(t,RGT,RGT);
-    updateTop(t,RGT,LFT);
-    updateLeft(t,LFT,LFT);
-    updateBottom(t,LFT,RGT);
+    updateRight(RGT,RGT);
+    updateTop(RGT,LFT);
+    updateLeft(LFT,LFT);
+    updateBottom(LFT,RGT);
     
     Log->addLog(LFT);
     return left? LFT:RGT;
@@ -144,16 +141,18 @@ tile* Vsplit(tile*t,int x,bool left){
 // otherwise return empty.     
 std::vector<tile*> AreaSearch(int x1,int y1,int x2,int y2){
     std::vector<tile*>Tiles;
-    tile*t1,*t2;
+    
     bool block = false;
     while(!block && y2 > y1){  // can't equal
+        tile*t1 = nullptr,*t2 = nullptr;
+        
         t1 = pointFinding(x1,y2);
-        t2 = pointFinding(x2,y2);
-        if(t1 != t2){   // if t1 and t2 are not the same  and t2->x() is smaller than x2 , it must has block tiles in this region!(t2 or t1)      
+        if(y2!=Log->getw())
+            t2 = pointFinding(x2,y2);
+        if(t2 && t1 != t2){   // if t1 and t2 are not the same  and t2->x() is smaller than x2 , it must has block tiles in this region!(t2 or t1)      
             if(t2->x() < x2)
                 block = true;
         }
-
         if(!t1->isSpace())
             block = true;
         Tiles.push_back(t1);
@@ -196,9 +195,49 @@ tile* insert1(tile*t ,int x,int y,int w,int h)
 
 
 
+
+bool checkspan(std::vector<tile*>tiles){
+    for(int i = 1;i < tiles.size();i++)
+        if(tiles.at(i-1)->x()!=tiles.at(i)->x()||tiles.at(i-1)->w()!=tiles.at(i)->w())
+            return false;
+    return true;
+}
+
+bool continuous(std::vector<tile*>tiles){
+
+    if(!checkspan(tiles))return false;
+
+    for(int i = 1;i < tiles.size();i++)
+        if(gety(tiles.at(i-1)) != gety2(tiles.at(i)))
+            return false;
+    return true;
+}
+
 //還要寫一個merge function
-void merge(std::vector<tile*>tiles);
-void mergeCheck(tile*t); //merge if have same horizontal span.  use lb pointer.
+tile* merge(std::vector<tile*>tiles)
+{
+    if(continuous(tiles)){
+        tile*upper = tiles.at(0);
+        tile*lower = tiles.at(tiles.size()-1);
+        
+        // ptr setting for updating
+        upper ->seth(gety2(upper) - lower->y());
+        upper ->sety(lower->y());
+        
+        upper ->setlb(lower->lb());
+        upper ->setbl(lower->bl());
+        // update
+        updateRight(upper,upper);
+        updateLeft(upper,upper);
+        updateTop(upper,upper);
+        updateRight(upper,upper);
+    }else{
+        std::cout<<"tiles are not continuous, can't merge\n";
+    }
+    for(int i = 1;i<tiles.size();i++)delete tiles.at(i);
+    return tiles.at(0);
+}
+
 
 tile* InsertBlock(int id,int x,int y,int w,int h){
     auto SpaceTiles = AreaSearch(x,y,x+w,y+h);
@@ -214,7 +253,10 @@ tile* InsertBlock(int id,int x,int y,int w,int h){
             blockTile = insert1(space,x,y,w,h);
         }
     }
+
+    //  last
     else{
+
 
 
     }
@@ -259,29 +301,40 @@ int main()
 {
     Log = new userlog(500,500);
     
-
-
-    tile* b1 = InsertBlock(1,50,40,250,60);
-    tile* b2 = InsertBlock(2,55,250,50,150);
-
+    tile* b1 = InsertBlock(1,0,0,200,500);
+    tile* b2 = InsertBlock(2,300,0,200,500);
     std::cout<<*b1<<"\n";
     std::cout<<*b2<<"\n";
-   
 
-    auto nbs = getNeighbor(b1);
+    tile* space = b1->tr();
+    std::cout<<"space = "<<*space<<"\n";
+    tile *t1 = Hsplit(space,200);
+    tile *t2 = Hsplit(t1,80,false);
 
-    for(auto nb:nbs)
-    {
-        std::cout<<*nb<<"\n";
-    }
+    std::cout<<"show split spaces\n";
+    std::cout<<*t2->rt()<<"\n";
+    std::cout<<*t2<<"\n";
+    std::cout<<*t2->lb()<<"\n";
+
+    std::cout<<"check ptr:\n";
+    std::cout<<*b1->tr()<<"\n";
+    std::cout<<*b2->bl()<<"\n";
 
 
-    auto nbs2 = getNeighbor(b2);
+    std::vector<tile*> continuousSpace;
 
-    for(auto nb:nbs2)
-    {
-        std::cout<<*nb<<"\n";
-    }
+    continuousSpace.push_back(t2->rt());
+    continuousSpace.push_back(t2);
+    continuousSpace.push_back(t2->lb());
 
+    tile* mergeTile  = merge(continuousSpace);
+
+    std::cout<<"after merge\n";
+    std::cout<<*mergeTile<<"\n";
+
+
+    std::cout<<"check  ptr:\n";
+    std::cout<<*b1->tr()<<"\n";
+    std::cout<<*b2->bl()<<"\n";
    
 }

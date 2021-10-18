@@ -20,6 +20,8 @@ struct tile
     void settr(tile*t){_tr = t;}
     void setrt(tile*t){_rt = t;}
     void setid(int id){_id = id;}
+    void sety(int y){_y = y;}
+    void seth(int h){_h = h;}
     // getter
     int x()const{return _x;}
     int y()const{return _y;}
@@ -64,7 +66,7 @@ tile* Hsplit(tile*t,int y,bool bottom = true);
 
 std::set<tile*> getNeighbor(tile*t);
 tile* InsertBlock(int id,int x,int y,int w,int h);
-void mergeTiles(); //merge if have same horizontal span.  use lb pointer.
+
 
 
 
@@ -105,10 +107,13 @@ class userlog{
 public:
     userlog() = default;
     userlog(int w,int h)
-        :lastuser{ new tile(-1,0,0,w,h)}{}
+        :_h{h},_w{w},lastuser{ new tile(-1,0,0,w,h)}{}
     void addLog(tile*t){lastuser = t;}
     tile* lastLog()const{return lastuser;}
+    int getw(){return _w;}
+    int geth(){return _h;}
 private:
+    int _w,_h;
     tile * lastuser = nullptr;
 };
 

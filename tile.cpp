@@ -62,7 +62,7 @@ std::ostream& operator<<(std::ostream&os,const tile &t){
 // nb use the "set" function to decide which pointer to be set i.e lb,bl,tr,rt....
 // nb use the "next" function to find next neighbor.      
 // this function return last nb which is not neighbor of tile t.    
-tile* updateNeighbor(tile*t,tile*nb,t_get*get,int v,cmp *comp,t_move*next,t_set* set){   //return last neighbor sufficeint to value.
+tile* updateOneSide(tile*t,tile*nb,t_get*get,int v,cmp *comp,t_move*next,t_set* set){   //return last neighbor sufficeint to value.
     while(nb && comp(get(nb),v)){
         set(nb,t);
         nb = next(nb);

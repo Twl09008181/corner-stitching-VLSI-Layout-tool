@@ -4,6 +4,7 @@
 
 #include <vector>
 #include <iostream>
+#include <set>
 
 struct tile
 {
@@ -18,7 +19,7 @@ struct tile
     void setlb(tile*t){_lb = t;}
     void settr(tile*t){_tr = t;}
     void setrt(tile*t){_rt = t;}
-
+    void setid(int id){_id = id;}
     // getter
     int x()const{return _x;}
     int y()const{return _y;}
@@ -61,8 +62,8 @@ tile* Vsplit(tile*t,int x,bool left = true);
 tile* Hsplit(tile*t,int y,bool bottom = true);
 
 
-
-void InsertBlock(int id,int x,int y,int w,int h);
+std::set<tile*> getNeighbor(tile*t);
+tile* InsertBlock(int id,int x,int y,int w,int h);
 void mergeTiles(); //merge if have same horizontal span.  use lb pointer.
 
 
@@ -76,7 +77,8 @@ inline tile* tr(tile*t){return t->tr();}
 inline tile* rt(tile*t){return t->rt();}
 inline int getx(tile *t){return t->x();}
 inline int gety(tile *t){return t->y();}
-
+inline int getx2(tile *t){return t->x() + t->w();}
+inline int gety2(tile *t){return t->y() + t->y();}
 
 inline int getw(tile *t){return t->w();}
 inline int geth(tile *t){return t->h();}
@@ -90,6 +92,8 @@ inline void setrt(tile*t,tile *other){t->setrt(other);}
 inline bool nls(int a,int b){return a >= b;}
 // less than
 inline bool ls(int a,int b){return a < b;}
+
+inline bool ngt(int a,int b){return a<=b;}
 
 using cmp = decltype(nls);
 using t_get = decltype(getx);

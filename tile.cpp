@@ -170,31 +170,52 @@ void showptr(tile*t)
     std::cout<<"lb:"<<t->lb()<<" bl:"<<t->bl()<<" rt:"<<t->rt()<<" tr:"<<t->tr()<<"\n";
 }
 
+
+tile* insert1(tile*t ,int x,int y,int w,int h)
+{
+    std::set<tile*>rec;
+    if(gety2(t) > y + h){
+        rec.insert(t);
+        t = Hsplit(t,y+h);
+    }
+    if(gety(t) < y){
+        rec.insert(t);
+        t = Hsplit(t,y,false);
+    }
+    if(getx(t) < x){
+        rec.insert(t);
+        t = Vsplit(t,x,false);
+    }
+    if(getx2(t) > x + w){
+        rec.insert(t);
+        t = Vsplit(t,x+w);
+    }
+    for(auto r:rec)delete r;
+    return t;
+}
+
 tile* InsertBlock(int id,int x,int y,int w,int h){
     auto SpaceTiles = AreaSearch(x,y,x+w,y+h);
     if(SpaceTiles.empty()){return nullptr;} // blocks exist.
 
+    tile* blockTile = nullptr;
     if(SpaceTiles.size()==1)
     {
         tile* space = SpaceTiles.at(0);
         if(space->x()==x&&space->y()==y&&space->w()==w&&space->h()==h)//exactly same size.
-        {
-            space->setid(id);
-            Log->addLog(space);
-            return space;
-        }
+            blockTile = space;
         else{//much bigger than this block
-            tile* t1 = Hsplit(space,y+h);delete space;
-            tile* t2 = Hsplit(t1,y,false);delete t1;
-            tile* t3 = Vsplit(t2,x,false);delete t2;
-            tile* t4 = Vsplit(t3,x+w);delete t3;
-            t4->setid(id);
-            Log->addLog(t4);
-            return t4;
+            blockTile = insert1(space,x,y,w,h);
         }
     }
+    else{
 
 
+    }
+
+    Log->addLog(blockTile);
+    blockTile->setid(id);
+    return blockTile;
 }
 
 
@@ -235,13 +256,23 @@ int main()
 
 
     tile* b1 = InsertBlock(1,50,40,250,60);
-    tile* b2 = InsertBlock(1,50,40,250,60);
+    tile* b2 = InsertBlock(2,55,250,50,150);
 
+    std::cout<<*b1<<"\n";
+    std::cout<<*b2<<"\n";
    
 
     auto nbs = getNeighbor(b1);
 
     for(auto nb:nbs)
+    {
+        std::cout<<*nb<<"\n";
+    }
+
+
+    auto nbs2 = getNeighbor(b2);
+
+    for(auto nb:nbs2)
     {
         std::cout<<*nb<<"\n";
     }

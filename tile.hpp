@@ -41,16 +41,13 @@ private:
 // show information of tile t , including id,x,y,w,h.    
 std::ostream& operator<<(std::ostream&os,const tile &t);
 
-tile* init;
-
-// From "start" to do pointFinding algorithm until find some tile which contain (x,y) point.
 // (x,y) Point is allowed to lie on left/top edge of tile, but is not allowed to lie on right/bottom of tile.       
 // This property make one point only be contained by one tile.   
-tile* pointFinding(int x,int y,tile*hint);
+tile* pointFinding(int x,int y);
 
 // Find all tiles cross from (x,y) to (x,0) and return.
 // start is a hint of pointfinding.
-std::vector<tile*> Vsearch(int x,int y,tile*start);
+std::vector<tile*> Vsearch(int x,int y);
 
 // Split A tile into two part.    
 // In Vsplit, if left is true, then return left part.
@@ -94,7 +91,16 @@ using t_set = decltype(setbl);
 using t_move = decltype(bl);
 
 
-
+class userlog{
+public:
+    userlog() = default;
+    userlog(int w,int h)
+        :lastuser{ new tile(-1,0,0,w,h)}{}
+    void addLog(tile*t){lastuser = t;}
+    tile* lastLog()const{return lastuser;}
+private:
+    tile * lastuser = nullptr;
+};
 
 
 

@@ -3,6 +3,8 @@
 #include <iostream>
 
 
+userlog *Log;
+
 // Horizontal/Vertical move   
 tile* Hfind(int x,tile*t){
     if(t && x < t->x()){
@@ -25,12 +27,13 @@ tile* Vfind(int y,tile*t){
     return t;
 }
 
-// From "start" to do pointFinding algorithm until find some tile which contain (x,y) point.
+
 // (x,y) Point is allowed to lie on left/top edge of tile, but is not allowed to lie on right/bottom of tile.       
 // This property make one point only be contained by one tile.   
 //hint   x can equal to t->x()  (left edge )  , y can equal to t->y() + t->h()  (top edge )
 // but x can't equal to t->x() + t->w() (right edge) , y can't eqautl to t->y() (bottom edge)
-tile* pointFinding(int x,int y,tile*t){  
+tile* pointFinding(int x,int y){  
+    tile *t = Log->lastLog();
     if(t==nullptr){std::cerr<<"erro arg in point Finding\n";exit(1);}
     auto found = [](int x,int y,tile*t){return ( (x >= t->x()) && (x < t->x() + t->w()) && (y > t->y()) && (y <= t->y() + t->h()));};
     while(t&&!found(x,y,t)){
@@ -39,17 +42,20 @@ tile* pointFinding(int x,int y,tile*t){
         t = Vfind(y,t);//Vertical
     }
     if(!t){std::cerr<<"erro in point Finding, can't find target!\n";exit(1);}
+    Log->addLog(t);
     return t;
 }
 
 
 // Find all tiles cross from (x,y) to (x,0) and return.
-std::vector<tile*> Vsearch(int x,int y,tile*t){
+std::vector<tile*> Vsearch(int x,int y){
     std::vector<tile*>Tiles;
-    while( y > 0 && (t = pointFinding(x,y,t))){ 
+    tile*t = nullptr;
+    while( y > 0 && (t = pointFinding(x,y))){ 
         Tiles.push_back(t);
         y = t->y() - 1;
     } 
+    if(t)Log->addLog(t);
     return Tiles;
 }
 
@@ -75,8 +81,8 @@ tile* updateNeighbor(tile*t,tile*nb,t_get*get,int v,cmp *comp,t_move*next,t_set*
     return nb;
 }
 
-// updateFunc(tile *origin,tile *partA,tile *part B)
 
+// updateFunc(tile *origin,tile *partA,tile *part B)
 // use partA to find the start of neighbor    
 // for example, if you want to update rightside, you need use the "tr" pointer, which is belong to right/top part , so part A is right or top 
 void updateRight(tile *origin,tile* partA,tile * partB){
@@ -110,6 +116,7 @@ tile* Hsplit(tile*t,int y,bool bottom){
     updateTop(t,top,top);
     updateLeft(t,bot,top);
     updateBottom(t,bot,bot);
+    Log->addLog(bot);
     return bottom ? bot:top;
 }
 
@@ -122,13 +129,14 @@ tile* Vsplit(tile*t,int x,bool left){
     updateTop(t,RGT,LFT);
     updateLeft(t,LFT,LFT);
     updateBottom(t,LFT,RGT);
+    Log->addLog(LFT);
     return left? LFT:RGT;
 }
 
 
 
 void InsertBlock(int id,int x,int y,int w,int h){
-    std::vector<tile*>tiles = Vsearch(x, y + h, init);
+    std::vector<tile*>tiles = Vsearch(x, y + h);
 
     //now get tiles , we can split this tiles by some way 
 
@@ -141,31 +149,11 @@ void InsertBlock(int id,int x,int y,int w,int h){
 }
 
 
+
 int main()
 {
-    tile t(-1,0,0,200,200); // initial space tile.
-    init = &t;
-
-    tile* bot = Hsplit(&t,30);
-
-
-    // std::cout<<bot->x()<<" "<<bot->y()<<" "<<bot->w()<<" "<<bot->h()<<"\n";
-    std::cout<<*bot<<"\n"<<*bot->rt()<<"\n";
-
-
+    Log = new userlog(200,200);
+    tile* bot = Hsplit(Log->lastLog(),30);
     tile* lft = Vsplit(bot,100);
-    std::cout<<*lft<<"\n"<<*lft->tr()<<"\n";
-
-    tile *rgt = lft->tr();
-
-    std::cout<<"rt = "<<*rgt->rt()<<"\n";
-
-    // std::cout<<lft->tr()->x()<<"\n";
-    // std::cout<<"point finding:"<<*pointFinding(0,30,lft)<<"\n";
-    
-    std::cout<<"point finding:"<<*pointFinding(100,30,lft)<<"\n";
-
-    std::cout<<"point finding:"<<*pointFinding(100,60,lft)<<"\n";
-
-    std::cout<<"point finding:"<<*pointFinding(0,200,lft)<<"\n";
+    Vsearch(150,200);
 }

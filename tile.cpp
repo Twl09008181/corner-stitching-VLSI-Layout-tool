@@ -71,35 +71,35 @@ tile* updateOneSide(tile*t,tile*nb,t_get*get,int v,cmp *comp,t_move*next,t_set* 
 }
 
 
-// updateFunc(tile *origin,tile *partA,tile *part B)
+// updateFunc(tile *partA,tile *part B)
 // use partA to find the start of neighbor    
 // for example, if you want to update rightside, you need use the "tr" pointer, which is belong to right/top part , so part A is right or top 
-void updateRight(tile *origin,tile* partA,tile * partB){
-    tile *last = updateNeighbor(partA,origin->tr(),gety,partA->y(),nls,lb,setbl);
+void updateRight(tile* partA,tile * partB){
+    tile *last = updateOneSide(partA,partA->tr(),gety,partA->y(),nls,lb,setbl);
     if(partA!=partB){
         partB->settr(last);
-        updateNeighbor(partB,last,gety,partB->y(),nls,lb,setbl);
+        updateOneSide(partB,last,gety,partB->y(),nls,lb,setbl);
     }
 }
-void updateTop(tile *origin,tile* partA,tile * partB){
-    tile *last = updateNeighbor(partA,origin->rt(),getx,partA->x(),nls,bl,setlb);
+void updateTop(tile* partA,tile * partB){
+    tile *last = updateOneSide(partA,partA->rt(),getx,partA->x(),nls,bl,setlb);
     if(partA!=partB){
         partB->setrt(last);
-        updateNeighbor(partB,last,getx,partB->x(),nls,bl,setlb);
+        updateOneSide(partB,last,getx,partB->x(),nls,bl,setlb);
     }
 }
-void updateLeft(tile *origin,tile* partA,tile * partB){
-    tile *last = updateNeighbor(partA,origin->bl(),gety2,partA->y() + partA->h(),ngt,rt,settr);
+void updateLeft(tile* partA,tile * partB){
+    tile *last = updateOneSide(partA,partA->bl(),gety2,partA->y() + partA->h(),ngt,rt,settr);
     if(partA!=partB){
         partB->setbl(last);
-        updateNeighbor(partB,last,gety,partB->y() + partB->h(),ngt,rt,settr);
+        updateOneSide(partB,last,gety2,partB->y() + partB->h(),ngt,rt,settr);
     }
 }
-void updateBottom(tile *origin,tile* partA,tile * partB){
-    tile *last = updateNeighbor(partA,partA->lb(),getx2,partA->x() + partA->w(),ngt,tr,setrt);
+void updateBottom(tile* partA,tile * partB){
+    tile *last = updateOneSide(partA,partA->lb(),getx2,partA->x() + partA->w(),ngt,tr,setrt);
     if(partA!=partB){
         partB->setlb(last);  
-        updateNeighbor(partB,last,getx2,partB->x() + partB->w(),ngt,tr,setrt);
+        updateOneSide(partB,last,getx2,partB->x() + partB->w(),ngt,tr,setrt);
     }
 }
 

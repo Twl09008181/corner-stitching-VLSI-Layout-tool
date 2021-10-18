@@ -1,33 +1,12 @@
-
-
 #include "tile.hpp"
 #include <vector>
 #include <iostream>
 
 
-tile* bl(tile*t){return t->bl();}
-tile* lb(tile*t){return t->lb();}
-tile* tr(tile*t){return t->tr();}
-tile* rt(tile*t){return t->rt();}
-int getx(tile *t){return t->x();}
-int gety(tile *t){return t->y();}
-int getw(tile *t){return t->w();}
-int geth(tile *t){return t->h();}
-int getid(tile *t){return t->id();}
-void setbl(tile*t,tile *other){t->setbl(other);}
-void setlb(tile*t,tile *other){t->setlb(other);}
-void settr(tile*t,tile *other){t->settr(other);}
-void setrt(tile*t,tile *other){t->setrt(other);}
 
-bool nls(int a,int b){return a >= b;}//not less
-bool ls(int a,int b){return a < b;}//less than
-
-using cmp = decltype(nls);
-using t_get = decltype(getx);
-using t_set = decltype(setbl);
-using t_move = decltype(bl);
-
-void Move(int p,tile*t,t_move*gt,t_move *ls,int(*v)(tile*)){
+// move by apply function "gt" while p is greater than v(t).     
+// move by apply function "ls" while p is less than v(t).
+void rush(int p,tile*t,t_move*gt,t_move *ls,int(*v)(tile*)){
     if(t && p < v(t)){
         while(t && p < v(t))
             t = ls(t);
@@ -37,26 +16,33 @@ void Move(int p,tile*t,t_move*gt,t_move *ls,int(*v)(tile*)){
     }
 }
 
-void Hmove(int x,tile*t){Move(x,t,tr,bl,getx);}
-void Vmove(int y,tile*t){Move(y,t,rt,lb,gety);}
+// Horizontal/Vertical move   
+void Hfind(int x,tile*t){rush(x,t,tr,bl,getx);}
+void Vfind(int y,tile*t){rush(y,t,rt,lb,gety);}
 
-tile* pointFinding(int x,int y,tile*t){  // 要求 p.x < t.x + w && p.y > t.y , 允許p在tile左edge以及上edge , 但不允許在bottom 以及 right 
+// From "start" to do pointFinding algorithm until find some tile which contain (x,y) point.
+// (x,y) Point is allowed to lie on left/bottom  edge of tile, but is not allowed to lie on right/top of tile.       
+// This property make one point only be contained by one tile.   
+tile* pointFinding(int x,int y,tile*t){  
+    
     if(t==nullptr){std::cerr<<"erro arg in point Finding\n";exit(1);}
-    auto found = [](int x,int y,tile*t){return ( (x >= t->_x) && (x < t->_x + t->_w) && (y >= t->_y) && (y < t->_y + t->_h));};
+    auto found = [](int x,int y,tile*t){return ( (x >= t->x()) && (x < t->x() + t->w()) && (y >= t->y()) && (y < t->y() + t->h()));};
     while(!found(x,y,t)){
-        Hmove(x,t);//Horizontal 
+        Hfind(x,t);//Horizontal 
         if(t && found(x,y,t))break;
-        Vmove(y,t);//Vertical
+        Vfind(y,t);//Vertical
     }
     if(!t){std::cerr<<"erro in point Finding, can't find target!\n";exit(1);}
     return t;
 }
 
-std::vector<tile*> Vsearch(int x,int y,tile*t){//find all tiles cross from (x,y) to (x,0). 
+
+// Find all tiles cross from (x,y) to (x,0) and return.
+std::vector<tile*> Vsearch(int x,int y,tile*t){
     std::vector<tile*>Tiles;
-    while( y > 0 && (t = pointFinding(x,y,t))){   //use t as start to find the tile contian point (x,y)
+    while( y > 0 && (t = pointFinding(x,y,t))){ 
         Tiles.push_back(t);
-        y = t->_y - 1;
+        y = t->y() - 1;
     } 
     return Tiles;
 }
@@ -77,17 +63,31 @@ void InsertBlock(int id,int x,int y,int w,int h){
 
 }
 
+
+// show information of tile t , including id,x,y,w,h.    
 std::ostream& operator<<(std::ostream&os,const tile &t){
     return os<<"tile id:"<<t.id()<<" left-corner : ("<<t.x()<<","<<t.y()<<")  width : "<<t.w()<<" height : "<<t.h();
 }
-tile* updateNeighbor(tile*t,tile*nb,t_get*get,int v,cmp *comp,t_move*next,t_set* set)   //return last neighbor sufficeint to value.
-{
+
+
+// Split's helper function    
+// updating all neighbors nb's pointer to t if  target condition is happend.    
+// while comp(get(nb),v) is true, then set nb's some ptr to tile t.    
+// nb use the "set" function to decide which pointer to be set i.e lb,bl,tr,rt....
+// nb use the "next" function to find next neighbor.      
+// this function return last nb which is not neighbor of tile t.    
+tile* updateNeighbor(tile*t,tile*nb,t_get*get,int v,cmp *comp,t_move*next,t_set* set){   //return last neighbor sufficeint to value.
     while(nb && comp(get(nb),v)){
         set(nb,t);
         nb = next(nb);
     }
     return nb;
 }
+
+// updateFunc(tile *origin,tile *partA,tile *part B)
+
+// use partA to find the start of neighbor    
+// for example, if you want to update rightside, you need use the "tr" pointer, which is belong to right/top part , so part A is right or top 
 void updateRight(tile *origin,tile* partA,tile * partB){
     tile *last = updateNeighbor(partA,origin->tr(),gety,partA->y(),nls,lb,setbl);
     partB->settr(last);
@@ -119,11 +119,7 @@ tile* Hsplit(tile*t,int y,bool bottom){
     updateTop(t,top,top);
     updateLeft(t,bot,top);
     updateBottom(t,bot,bot);
-    if(bottom){
-        return bot;
-    }else{
-        return top;
-    }
+    return bottom ? bot:top;
 }
 
 tile* Vsplit(tile*t,int x,bool left){
@@ -135,11 +131,7 @@ tile* Vsplit(tile*t,int x,bool left){
     updateTop(t,RGT,LFT);
     updateLeft(t,LFT,LFT);
     updateBottom(t,LFT,RGT);
-    if(left){
-        return LFT;
-    }else{
-        return RGT;
-    }
+    return left? LFT:RGT;
 }
 
 

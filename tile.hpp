@@ -91,6 +91,19 @@ inline void setlb(tile*t,tile *other){t->setlb(other);}
 inline void settr(tile*t,tile *other){t->settr(other);}
 inline void setrt(tile*t,tile *other){t->setrt(other);}
 
+
+
+
+void setTr_if(tile* left,tile* right);
+void setRt_if(tile* bottom,tile* top);
+void setBl_if(tile* left,tile*right);
+void setLb_if(tile* bottom,tile* top);
+
+
+
+
+
+
 // not less than
 inline bool nls(int a,int b){return a >= b;}
 // less than

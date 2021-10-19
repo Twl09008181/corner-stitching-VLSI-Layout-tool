@@ -49,86 +49,98 @@ tile* pointFinding(int x,int y){
 
 
 
-
 // show information of tile t , including id,x,y,w,h.    
 std::ostream& operator<<(std::ostream&os,const tile &t){
     return os<<"tile id:"<<t.id()<<" left-corner : ("<<t.x()<<","<<t.y()<<")  width : "<<t.w()<<" height : "<<t.h();
 }
-
-
-// Split's helper function    
-// updating all neighbors nb's pointer to t if  target condition is happend.    
-// while comp(get(nb),v) is true, then set nb's some ptr to tile t.    
-// nb use the "set" function to decide which pointer to be set i.e lb,bl,tr,rt....
-// nb use the "next" function to find next neighbor.      
-// this function return last nb which is not neighbor of tile t.    
-tile* updateOneSide(tile*t,tile*nb,t_get*get,int v,cmp *comp,t_move*next,t_set* set){   //return last neighbor sufficeint to value.
-    while(nb && comp(get(nb),v)){
-        set(nb,t);
-        nb = next(nb);
-    }
-    return nb;
+void setTr_if(tile* left,tile* right){
+    if(gety2(right) >= gety2(left) && gety2(left) > gety(right))
+        left->settr(right);
 }
 
+void setRt_if(tile* bottom,tile* top){
+    if(getx2(top) >= getx2(bottom) && getx2(bottom) > getx(top))
+        bottom->setrt(top);
+}
 
-// updateFunc(tile *partA,tile *part B)
-// use partA to find the start of neighbor    
-// for example, if you want to update rightside, you need use the "tr" pointer, which is belong to right/top part , so part A is right or top 
-void updateRight(tile* partA,tile * partB){
-    tile *last = updateOneSide(partA,partA->tr(),gety,partA->y(),nls,lb,setbl);
-    if(partA!=partB){
-        partB->settr(last);
-        updateOneSide(partB,last,gety,partB->y(),nls,lb,setbl);
+void setBl_if(tile* left,tile*right){
+    if(gety2(left) > gety(right) && gety(right) >= gety(left))
+        right->setbl(left);
+}
+void setLb_if(tile* bottom,tile* top){
+    if(getx2(bottom) > getx(top) && getx(top) >= getx(bottom))
+        top->setlb(bottom);
+}
+
+using set_if = decltype(setRt_if);
+
+
+void OneSideUpdate(set_if* s1,set_if*s2,tile* t,const std::vector<tile*>&neighbors,bool tIsLB){
+    for(auto nb:neighbors){
+        if(tIsLB){
+            s1(t,nb);        
+            s2(t,nb);
+        }
+        else{
+            s1(nb,t);        
+            s2(nb,t);
+        }
     }
 }
-void updateTop(tile* partA,tile * partB){
-    tile *last = updateOneSide(partA,partA->rt(),getx,partA->x(),nls,bl,setlb);
-    if(partA!=partB){
-        partB->setrt(last);
-        updateOneSide(partB,last,getx,partB->x(),nls,bl,setlb);
-    }
+void updateRight(tile*t,const std::vector<tile*>&neighbors){
+    OneSideUpdate(setTr_if,setBl_if,t,neighbors,true);
 }
-void updateLeft(tile* partA,tile * partB){
-    tile *last = updateOneSide(partA,partA->bl(),gety2,partA->y() + partA->h(),ngt,rt,settr);
-    if(partA!=partB){
-        partB->setbl(last);
-        updateOneSide(partB,last,gety2,partB->y() + partB->h(),ngt,rt,settr);
-    }
+
+void updateTop(tile*t,const std::vector<tile*>&neighbors){
+    OneSideUpdate(setRt_if,setLb_if,t,neighbors,true);
 }
-void updateBottom(tile* partA,tile * partB){
-    tile *last = updateOneSide(partA,partA->lb(),getx2,partA->x() + partA->w(),ngt,tr,setrt);
-    if(partA!=partB){
-        partB->setlb(last);  
-        updateOneSide(partB,last,getx2,partB->x() + partB->w(),ngt,tr,setrt);
-    }
+
+void updateLeft(tile*t,const std::vector<tile*>&neighbors){
+    OneSideUpdate(setTr_if,setBl_if,t,neighbors,false);
 }
+
+void updateBottom(tile*t,const std::vector<tile*>&neighbors){
+    OneSideUpdate(setRt_if,setLb_if,t,neighbors,false);
+}
+
 
 
 tile* Hsplit(tile*t,int y,bool bottom){
     tile *top = new tile(t->id(),t->x(),y, t->w(), t->y() + t->h() - y,nullptr,nullptr,t->tr(),t->rt());
     tile *bot = new tile(t->id(),t->x(),t->y(),t->w(), y - t->y(),t->bl(),t->lb());
-    top->setlb(bot);
     bot->setrt(top);
-    updateRight(top,bot);
-    updateTop(top,top);
-    updateLeft(bot,top);
-    updateBottom(bot,bot);
+    top->setlb(bot);
+    auto LFT = getLeft(t);
+    auto RGT = getRight(t);
+    auto BOT= getBottom(t);
+    auto TOP = getTop(t);
+    updateRight(top,RGT);
+    updateRight(bot,RGT);
+    updateLeft(top,LFT);
+    updateLeft(bot,LFT);
+    updateTop(top,TOP);
+    updateBottom(bot,BOT);
     Log->addLog(bot);
     return bottom ? bot:top;
 }
 
 tile* Vsplit(tile*t,int x,bool left){
-    tile *RGT = new tile(t->id(),  x    ,t->y(), t->w() + t->x() - x, t->h(), nullptr,nullptr,t->tr(),t->rt());
-    tile *LFT  = new tile(t->id(),t->x() ,t->y(),   x - t->x()       , t->h(), t->bl(),t->lb());
-    RGT->setbl(LFT);
-    LFT->settr(RGT);
-    updateRight(RGT,RGT);
-    updateTop(RGT,LFT);
-    updateLeft(LFT,LFT);
-    updateBottom(LFT,RGT);
-    
-    Log->addLog(LFT);
-    return left? LFT:RGT;
+    tile *rgt = new tile(t->id(),  x    ,t->y(), t->w() + t->x() - x, t->h(), nullptr,nullptr,t->tr(),t->rt());
+    tile *lft  = new tile(t->id(),t->x() ,t->y(),   x - t->x()       , t->h(), t->bl(),t->lb());
+    rgt->setbl(lft);
+    lft->settr(rgt);
+    auto LFT = getLeft(t);
+    auto RGT = getRight(t);
+    auto BOT= getBottom(t);
+    auto TOP = getTop(t);
+    updateTop(rgt,TOP);
+    updateTop(lft,TOP);
+    updateBottom(rgt,BOT);
+    updateBottom(lft,BOT);
+    updateRight(rgt,RGT);
+    updateLeft(lft,LFT);
+    Log->addLog(lft);
+    return left? lft:rgt;
 }
 
 
@@ -147,7 +159,7 @@ std::vector<tile*> AreaSearch(int x1,int y1,int x2,int y2){
         tile*t1 = nullptr,*t2 = nullptr;
         
         t1 = pointFinding(x1,y2);
-        if(y2!=Log->getw())
+        if(x2 != Log->getw())
             t2 = pointFinding(x2,y2);
         if(t2 && t1 != t2){   // if t1 and t2 are not the same  and t2->x() is smaller than x2 , it must has block tiles in this region!(t2 or t1)      
             if(t2->x() < x2)
@@ -199,14 +211,14 @@ tile* tailor(tile*t ,int x,int y,int w,int h)
 
 
 
-bool checkspan(std::vector<tile*>tiles){
+bool checkspan(std::vector<tile*>&tiles){
     for(int i = 1;i < tiles.size();i++)
         if(tiles.at(i-1)->x()!=tiles.at(i)->x()||tiles.at(i-1)->w()!=tiles.at(i)->w())
             return false;
     return true;
 }
 
-bool continuous(std::vector<tile*>tiles){
+bool continuous(std::vector<tile*>&tiles){
 
     if(!checkspan(tiles))return false;
 
@@ -217,9 +229,9 @@ bool continuous(std::vector<tile*>tiles){
 }
 
 // merge continuous tiles from high to low sorted. 
-tile* merge(std::vector<tile*>tiles)
+tile* merge(std::vector<tile*>&tiles)
 {
-    if(continuous(tiles)){
+    if(continuous(tiles)&&tiles.size()>1){
         tile*upper = tiles.at(0);
         tile*lower = tiles.at(tiles.size()-1);
         
@@ -229,17 +241,57 @@ tile* merge(std::vector<tile*>tiles)
         
         upper ->setlb(lower->lb());
         upper ->setbl(lower->bl());
-        // update
-        updateRight(upper,upper);
-        updateLeft(upper,upper);
-        updateTop(upper,upper);
-        updateRight(upper,upper);
+
+        updateRight(upper,getRight(upper));
+        updateLeft(upper,getLeft(upper));
+        updateTop(upper,getTop(upper));
+        updateBottom(upper,getBottom(upper));
+
     }else{
-        std::cout<<"tiles are not continuous, can't merge\n";
+        return tiles.at(0);
     }
     for(int i = 1;i<tiles.size();i++)delete tiles.at(i);
     return tiles.at(0);
 }
+
+
+
+void doMerge(std::vector<tile*>&tiles,t_move* next,t_move* precheck,t_get* v)
+{
+    if(tiles.empty()){return ;}
+    tile* t = tiles.at(0);
+    if(v(precheck(t)) == v(t)){
+        t = precheck(t);
+    }
+    bool needSort = false;
+    auto decendingY = [](tile*t1,tile*t2){return t1->y() > t2->y();};
+    if(next==rt){
+        needSort = true;
+    }
+    else if(next!=lb){
+        std::cerr<<"error arg pass in do Merge, next only accept rt/lb !\n";
+        return ;
+    }
+    std::vector<tile*> mergeTiles{t};
+    while( (t = next(t)) && ( v(t) == v(tiles.at(0)) ) )
+    {
+        if(t->w() == mergeTiles.at(0)->w())
+            mergeTiles.push_back(t);
+        else{
+            if(needSort)std::sort(mergeTiles.begin(),mergeTiles.end(),decendingY);
+            tile* m = merge(mergeTiles);
+            mergeTiles.clear();
+            mergeTiles.push_back(t);
+        }
+    }
+    if(needSort)std::sort(mergeTiles.begin(),mergeTiles.end(),decendingY);
+    t = merge(mergeTiles);
+}
+
+
+
+
+
 
 
 tile* InsertBlock(int id,int x,int y,int w,int h){
@@ -247,17 +299,45 @@ tile* InsertBlock(int id,int x,int y,int w,int h){
     if(SpaceTiles.empty()){return nullptr;} // blocks exist.
 
     std::vector<tile*>blocks;
+   
+
+    
     for(int i = 0;i < SpaceTiles.size() ; i++)
         blocks.push_back(tailor(SpaceTiles.at(i),x,y,w,h));
-    
-    
-    tile* blockTile = merge(blocks);
-    //check left space 
-    
 
-    //check right space
-    Log->addLog(blockTile);
+    tile* blockTile = merge(blocks); 
     blockTile->setid(id);
+
+
+    // std::cout<<"tile:"<<*blockTile<<"\n";
+    // std::cout<<"lb:"<<*blockTile->lb()<<"\n";
+
+
+    // std::cout<<"getlft\n";
+    // auto LFT = getLeft(blockTile); 
+    // for(auto l:LFT){std::cout<<*l<<"\n";}
+    
+    // std::cout<<"merge lft\n";
+    // MergLeft(LFT);
+
+
+    // std::cout<<"get rgt\n";
+    // std::cout<<"rt = "<<*blockTile->rt()<<"\n";
+    // auto RGT = getRight(blockTile);
+    // for(auto r:RGT){std::cout<<*r<<"\n";}
+
+    //  std::cout<<"get top\n";
+    // auto TOP =getTop(blockTile);
+    // for(auto t:TOP){std::cout<<*t<<"\n";}
+
+    // std::cout<<"get bot\n";
+    // auto BOT = getBottom(blockTile);
+    // for(auto b:BOT){std::cout<<*b<<"\n";}
+
+    // std::cout<<"merge rgt\n";
+    // MergeRight(RGT);
+    // std::cout<<"merge done id:"<<id<<"\n";
+    Log->addLog(blockTile);
     return blockTile;
 }
 
@@ -273,30 +353,12 @@ std::vector<tile*> NeighborTraversal(tile*t,tile*nb,t_get*get,int v,cmp *comp,t_
     }
     return nbs;
 }
-
-
-
-
-
-std::vector<tile*>getLeft(tile*t){
-    return (t&&t->bl()) ? NeighborTraversal(t,t->bl(),gety2,gety2(t),ngt,rt) : std::vector<tile*>{}; 
-}
-std::vector<tile*>getRight(tile*t){
-    return (t&&t->tr()) ? NeighborTraversal(t,t->tr(),gety,gety(t),nls,lb)   : std::vector<tile*>{}; 
-}
-std::vector<tile*>getTop(tile*t){
-    return (t&&t->rt()) ? NeighborTraversal(t,t->rt(),getx,getx(t),nls,bl)   : std::vector<tile*>{}; 
-}
-std::vector<tile*>getBottom(tile*t){
-    return (t&&t->lb())? NeighborTraversal(t,t->lb(),getx2,getx2(t),ngt,tr)  : std::vector<tile*>{}; 
-}
-
-std::vector<tile*>getNeighbor(tile*t)
-{
-    auto left = getLeft(t);
-    auto bottom = getBottom(t);
-    auto right = getRight(t);
-    auto top = getTop(t);
+std::vector<tile*>getNeighbor(tile*t){
+    auto left = getLeft(t);     // from down to top
+    
+    auto bottom = getBottom(t); // from left to right
+    auto right = getRight(t);   // from top to down
+    auto top = getTop(t);       // from right to left
     std::vector<tile*>nbs;
     nbs.resize(left.size() + bottom.size() + right.size() + top.size());
     auto it = std::copy(left.begin(),left.end(),nbs.begin());
@@ -312,23 +374,57 @@ int main()
 {
     Log = new userlog(500,500);
     
+
     tile* b1 = InsertBlock(1,50,40,250,60);
     tile* b2 = InsertBlock(2,55,250,50,150);
-    std::cout<<*b1<<"\n";
+    tile* b3 = InsertBlock(3,250,355,170,45);
+    tile* b4 = InsertBlock(4,250,310,170,45);
+    tile* b5 = InsertBlock(5,320,265,75,45);
+
+    // auto nbs5 = getNeighbor(b5);
+
+    // std::cout<<*b5->rt()<<"\n";
+    // std::cout<<*b5->tr()<<"\n";
+    // std::cout<<*b5->lb()<<"\n";
+    // std::cout<<*b5->bl()<<"\n";
+
+    std::cout<<"blocks\n";
+    std::cout<<"\n"<<*b1<<"\n";
     std::cout<<*b2<<"\n";
+    std::cout<<*b3<<"\n";
+    std::cout<<*b4<<"\n";
+    std::cout<<*b5<<"\n";
 
 
     auto nbs1 = getNeighbor(b1);
     auto nbs2 = getNeighbor(b2);
+    auto nbs3 = getNeighbor(b3);
+    auto nbs4 = getNeighbor(b4);
+    auto nbs5 = getNeighbor(b5);
+    // // auto nbs4Bot = getBottom(b4);
 
-    for(auto nb:nbs1)
-    {
-        std::cout<<*nb<<"\n";
-    }
-        for(auto nb:nbs2)
-    {
-        std::cout<<*nb<<"\n";
-    }
+    
+    
+
+    std::cout<<"nb1:\n";
+    std::for_each(nbs1.begin(),nbs1.end(),[](tile* t){std::cout<<*t<<"\n";});
+    std::cout<<"nb2:\n";
+    std::for_each(nbs2.begin(),nbs2.end(),[](tile* t){std::cout<<*t<<"\n";});
+    std::cout<<"nb3:\n";
+    std::for_each(nbs3.begin(),nbs3.end(),[](tile* t){std::cout<<*t<<"\n";});
+    std::cout<<"nb4:\n";
+    std::for_each(nbs4.begin(),nbs4.end(),[](tile* t){std::cout<<*t<<"\n";});
+    std::cout<<"nb5:\n";
+    std::for_each(nbs5.begin(),nbs5.end(),[](tile* t){std::cout<<*t<<"\n";});
+
+    // for(auto nb:nbs1)
+    // {
+    //     std::cout<<*nb<<"\n";
+    // }
+    //     for(auto nb:nbs2)
+    // {
+    //     std::cout<<*nb<<"\n";
+    // }
 
     // tile* space = b1->tr();
     // std::cout<<"space = "<<*space<<"\n";

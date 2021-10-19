@@ -64,27 +64,26 @@ tile* Vsplit(tile*t,int x,bool left = true);
 tile* Hsplit(tile*t,int y,bool bottom = true);
 
 
-std::set<tile*> getNeighbor(tile*t);
 tile* InsertBlock(int id,int x,int y,int w,int h);
 
-
+std::vector<tile*>getNeighbor(tile*t);
 
 
 
 
 // Fptr 
-inline tile* bl(tile*t){return t->bl();}
-inline tile* lb(tile*t){return t->lb();}
-inline tile* tr(tile*t){return t->tr();}
-inline tile* rt(tile*t){return t->rt();}
-inline int getx(tile *t){return t->x();}
-inline int gety(tile *t){return t->y();}
-inline int getx2(tile *t){return t->x() + t->w();}
-inline int gety2(tile *t){return t->y() + t->h();}
+inline tile* bl(tile*t){return t ? t->bl():nullptr;}
+inline tile* lb(tile*t){return t ? t->lb():nullptr;}
+inline tile* tr(tile*t){return t ? t->tr():nullptr;}
+inline tile* rt(tile*t){return t ? t->rt():nullptr;}
+inline int getx(tile *t){return t ? t->x():-1;}
+inline int gety(tile *t){return t ? t->y():-1;}
+inline int getx2(tile *t){return t ? t->x() + t->w():-1;}
+inline int gety2(tile *t){return t ? t->y() + t->h():-1;}
 
-inline int getw(tile *t){return t->w();}
-inline int geth(tile *t){return t->h();}
-inline int getid(tile *t){return t->id();}
+inline int getw(tile *t){return t? t->w() : -1;}
+inline int geth(tile *t){return t? t->h() : -1;}
+inline int getid(tile *t){return t? t->id() : 0;}
 inline void setbl(tile*t,tile *other){t->setbl(other);}
 inline void setlb(tile*t,tile *other){t->setlb(other);}
 inline void settr(tile*t,tile *other){t->settr(other);}

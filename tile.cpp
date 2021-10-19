@@ -170,7 +170,10 @@ void showptr(tile*t)
 }
 
 
-tile* insert1(tile*t ,int x,int y,int w,int h)
+
+
+// cut "t" to the shape w * h
+tile* tailor(tile*t ,int x,int y,int w,int h)
 {
     std::set<tile*>rec;
     if(gety2(t) > y + h){
@@ -213,7 +216,7 @@ bool continuous(std::vector<tile*>tiles){
     return true;
 }
 
-//還要寫一個merge function
+// merge continuous tiles from high to low sorted. 
 tile* merge(std::vector<tile*>tiles)
 {
     if(continuous(tiles)){
@@ -243,24 +246,16 @@ tile* InsertBlock(int id,int x,int y,int w,int h){
     auto SpaceTiles = AreaSearch(x,y,x+w,y+h);
     if(SpaceTiles.empty()){return nullptr;} // blocks exist.
 
-    tile* blockTile = nullptr;
-    if(SpaceTiles.size()==1)
-    {
-        tile* space = SpaceTiles.at(0);
-        if(space->x()==x&&space->y()==y&&space->w()==w&&space->h()==h)//exactly same size.
-            blockTile = space;
-        else{//much bigger than this block
-            blockTile = insert1(space,x,y,w,h);
-        }
-    }
+    std::vector<tile*>blocks;
+    for(int i = 0;i < SpaceTiles.size() ; i++)
+        blocks.push_back(tailor(SpaceTiles.at(i),x,y,w,h));
+    
+    
+    tile* blockTile = merge(blocks);
+    //check left space 
+    
 
-    //  last
-    else{
-
-
-
-    }
-
+    //check right space
     Log->addLog(blockTile);
     blockTile->setid(id);
     return blockTile;
@@ -270,6 +265,8 @@ tile* InsertBlock(int id,int x,int y,int w,int h){
 
 std::vector<tile*> NeighborTraversal(tile*t,tile*nb,t_get*get,int v,cmp *comp,t_move*next){   //return last neighbor sufficeint to value.
     std::vector<tile*>nbs;
+    nbs.push_back(nb);
+    nb = next(nb);
     while(nb && comp(get(nb),v)){
         nbs.push_back(nb);
         nb = next(nb);
@@ -278,20 +275,34 @@ std::vector<tile*> NeighborTraversal(tile*t,tile*nb,t_get*get,int v,cmp *comp,t_
 }
 
 
-std::set<tile*> getNeighbor(tile*t){
-    std::set<tile*>nbs;
-    if(t->bl())nbs.insert(t->bl());
-    if(t->lb())nbs.insert(t->lb());
-    if(t->tr())nbs.insert(t->tr());
-    if(t->rt())nbs.insert(t->rt());
-    auto left = NeighborTraversal(t,t->bl(),gety2,t->y()+t->h(),ngt,::rt);
-    auto bottom = NeighborTraversal(t,t->lb(),getx2,t->x()+t->w(),ngt,::tr);
-    auto right = NeighborTraversal(t,t->tr(),gety,t->y(),nls,::lb);
-    auto top = NeighborTraversal(t,t->rt(),getx,t->x(),nls,::bl);
-    for(auto l:left)nbs.insert(l);
-    for(auto r:right)nbs.insert(r);
-    for(auto t:top)nbs.insert(t);
-    for(auto b:bottom)nbs.insert(b);
+
+
+
+std::vector<tile*>getLeft(tile*t){
+    return (t&&t->bl()) ? NeighborTraversal(t,t->bl(),gety2,gety2(t),ngt,rt) : std::vector<tile*>{}; 
+}
+std::vector<tile*>getRight(tile*t){
+    return (t&&t->tr()) ? NeighborTraversal(t,t->tr(),gety,gety(t),nls,lb)   : std::vector<tile*>{}; 
+}
+std::vector<tile*>getTop(tile*t){
+    return (t&&t->rt()) ? NeighborTraversal(t,t->rt(),getx,getx(t),nls,bl)   : std::vector<tile*>{}; 
+}
+std::vector<tile*>getBottom(tile*t){
+    return (t&&t->lb())? NeighborTraversal(t,t->lb(),getx2,getx2(t),ngt,tr)  : std::vector<tile*>{}; 
+}
+
+std::vector<tile*>getNeighbor(tile*t)
+{
+    auto left = getLeft(t);
+    auto bottom = getBottom(t);
+    auto right = getRight(t);
+    auto top = getTop(t);
+    std::vector<tile*>nbs;
+    nbs.resize(left.size() + bottom.size() + right.size() + top.size());
+    auto it = std::copy(left.begin(),left.end(),nbs.begin());
+    it = std::copy(bottom.begin(),bottom.end(),it);
+    it = std::copy(right.begin(),right.end(),it);
+    std::copy(top.begin(),top.end(),it);
     return nbs;
 }
 
@@ -301,40 +312,53 @@ int main()
 {
     Log = new userlog(500,500);
     
-    tile* b1 = InsertBlock(1,0,0,200,500);
-    tile* b2 = InsertBlock(2,300,0,200,500);
+    tile* b1 = InsertBlock(1,50,40,250,60);
+    tile* b2 = InsertBlock(2,55,250,50,150);
     std::cout<<*b1<<"\n";
     std::cout<<*b2<<"\n";
 
-    tile* space = b1->tr();
-    std::cout<<"space = "<<*space<<"\n";
-    tile *t1 = Hsplit(space,200);
-    tile *t2 = Hsplit(t1,80,false);
 
-    std::cout<<"show split spaces\n";
-    std::cout<<*t2->rt()<<"\n";
-    std::cout<<*t2<<"\n";
-    std::cout<<*t2->lb()<<"\n";
+    auto nbs1 = getNeighbor(b1);
+    auto nbs2 = getNeighbor(b2);
 
-    std::cout<<"check ptr:\n";
-    std::cout<<*b1->tr()<<"\n";
-    std::cout<<*b2->bl()<<"\n";
+    for(auto nb:nbs1)
+    {
+        std::cout<<*nb<<"\n";
+    }
+        for(auto nb:nbs2)
+    {
+        std::cout<<*nb<<"\n";
+    }
+
+    // tile* space = b1->tr();
+    // std::cout<<"space = "<<*space<<"\n";
+    // tile *t1 = Hsplit(space,200);
+    // tile *t2 = Hsplit(t1,80,false);
+
+    // std::cout<<"show split spaces\n";
+    // std::cout<<*t2->rt()<<"\n";
+    // std::cout<<*t2<<"\n";
+    // std::cout<<*t2->lb()<<"\n";
+
+    // std::cout<<"check ptr:\n";
+    // std::cout<<*b1->tr()<<"\n";
+    // std::cout<<*b2->bl()<<"\n";
 
 
-    std::vector<tile*> continuousSpace;
+    // std::vector<tile*> continuousSpace;
 
-    continuousSpace.push_back(t2->rt());
-    continuousSpace.push_back(t2);
-    continuousSpace.push_back(t2->lb());
+    // continuousSpace.push_back(t2->rt());
+    // continuousSpace.push_back(t2);
+    // continuousSpace.push_back(t2->lb());
 
-    tile* mergeTile  = merge(continuousSpace);
+    // tile* mergeTile  = merge(continuousSpace);
 
-    std::cout<<"after merge\n";
-    std::cout<<*mergeTile<<"\n";
+    // std::cout<<"after merge\n";
+    // std::cout<<*mergeTile<<"\n";
 
 
-    std::cout<<"check  ptr:\n";
-    std::cout<<*b1->tr()<<"\n";
-    std::cout<<*b2->bl()<<"\n";
+    // std::cout<<"check  ptr:\n";
+    // std::cout<<*b1->tr()<<"\n";
+    // std::cout<<*b2->bl()<<"\n";
    
 }

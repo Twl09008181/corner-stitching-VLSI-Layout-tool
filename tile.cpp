@@ -5,6 +5,11 @@
 #include <set>
 userlog *Log;
 
+// show information of tile t , including id,x,y,w,h.    
+std::ostream& operator<<(std::ostream&os,const tile &t){
+    return os<<"tile id:"<<t.id()<<" left-corner : ("<<t.x()<<","<<t.y()<<")  width : "<<t.w()<<" height : "<<t.h();
+}
+
 // Horizontal/Vertical move   
 tile* Hfind(int x,tile*t){
     if(t && x < t->x()){
@@ -46,13 +51,36 @@ tile* pointFinding(int x,int y){
     return t;
 }
 
-
-
-
-// show information of tile t , including id,x,y,w,h.    
-std::ostream& operator<<(std::ostream&os,const tile &t){
-    return os<<"tile id:"<<t.id()<<" left-corner : ("<<t.x()<<","<<t.y()<<")  width : "<<t.w()<<" height : "<<t.h();
+// left - bottom (x1,y1)   right top (x2,y2)
+// check if this area has any block by checkin maximal horizontal stripes.
+// If has no blocks , return the space tiles in this region    
+// otherwise return empty.     
+std::vector<tile*> AreaSearch(int x1,int y1,int x2,int y2){
+    std::vector<tile*>Tiles;
+    
+    bool block = false;
+    while(!block && y2 > y1){  // can't equal
+        tile*t1 = nullptr,*t2 = nullptr;
+        
+        t1 = pointFinding(x1,y2);
+        if(x2 != Log->getw())
+            t2 = pointFinding(x2,y2);
+        if(t2 && t1 != t2){   // if t1 and t2 are not the same  and t2->x() is smaller than x2 , it must has block tiles in this region!(t2 or t1)      
+            if(t2->x() < x2)
+                block = true;
+        }
+        if(!t1->isSpace())
+            block = true;
+        Tiles.push_back(t1);
+        y2 = t1->y();//move down if no block.
+    }
+    if(block)return {};
+    return Tiles;  //if Tiles = empty : this area has block tile.
 }
+
+
+
+
 void setTr_if(tile* left,tile* right){
     if(gety2(right) >= gety2(left) && gety2(left) > gety(right))
         left->settr(right);
@@ -80,8 +108,7 @@ void OneSideUpdate(set_if* s1,set_if*s2,tile* t,const std::vector<tile*>&neighbo
         if(tIsLB){
             s1(t,nb);        
             s2(t,nb);
-        }
-        else{
+        }else{
             s1(nb,t);        
             s2(nb,t);
         }
@@ -147,39 +174,8 @@ tile* Vsplit(tile*t,int x,bool left){
 
 
 
-// left - bottom (x1,y1)   right top (x2,y2)
-// check if this area has any block by checkin maximal horizontal stripes.
-// If has no blocks , return the space tiles in this region    
-// otherwise return empty.     
-std::vector<tile*> AreaSearch(int x1,int y1,int x2,int y2){
-    std::vector<tile*>Tiles;
-    
-    bool block = false;
-    while(!block && y2 > y1){  // can't equal
-        tile*t1 = nullptr,*t2 = nullptr;
-        
-        t1 = pointFinding(x1,y2);
-        if(x2 != Log->getw())
-            t2 = pointFinding(x2,y2);
-        if(t2 && t1 != t2){   // if t1 and t2 are not the same  and t2->x() is smaller than x2 , it must has block tiles in this region!(t2 or t1)      
-            if(t2->x() < x2)
-                block = true;
-        }
-        if(!t1->isSpace())
-            block = true;
-        Tiles.push_back(t1);
-        y2 = t1->y();//move down if no block.
-    }
-    if(block)return {};
-    return Tiles;  //if Tiles = empty : this area has block tile.
-}
 
 
-
-void showptr(tile*t)
-{
-    std::cout<<"lb:"<<t->lb()<<" bl:"<<t->bl()<<" rt:"<<t->rt()<<" tr:"<<t->tr()<<"\n";
-}
 
 
 
@@ -209,19 +205,15 @@ tile* tailor(tile*t ,int x,int y,int w,int h)
 }
 
 
-
-
-bool checkspan(std::vector<tile*>&tiles){
+bool checkspan(const std::vector<tile*>&tiles){
     for(int i = 1;i < tiles.size();i++)
         if(tiles.at(i-1)->x()!=tiles.at(i)->x()||tiles.at(i-1)->w()!=tiles.at(i)->w())
             return false;
     return true;
 }
 
-bool continuous(std::vector<tile*>&tiles){
-
+bool continuous(const std::vector<tile*>&tiles){
     if(!checkspan(tiles))return false;
-
     for(int i = 1;i < tiles.size();i++)
         if(gety(tiles.at(i-1)) != gety2(tiles.at(i)))
             return false;
@@ -229,7 +221,7 @@ bool continuous(std::vector<tile*>&tiles){
 }
 
 // merge continuous tiles from high to low sorted. 
-tile* merge(std::vector<tile*>&tiles)
+tile* merge(const std::vector<tile*>&tiles)
 {
     if(continuous(tiles)&&tiles.size()>1){
         tile*upper = tiles.at(0);
@@ -256,7 +248,7 @@ tile* merge(std::vector<tile*>&tiles)
 
 
 
-void doMerge(std::vector<tile*>&tiles,t_move* next,t_move* precheck,t_get* v)
+void doMerge(const std::vector<tile*>&tiles,t_move* next,t_move* precheck,t_get* v)
 {
     if(tiles.empty()){return ;}
     tile* t = tiles.at(0);
@@ -289,54 +281,16 @@ void doMerge(std::vector<tile*>&tiles,t_move* next,t_move* precheck,t_get* v)
 }
 
 
-
-
-
-
-
 tile* InsertBlock(int id,int x,int y,int w,int h){
     auto SpaceTiles = AreaSearch(x,y,x+w,y+h);
     if(SpaceTiles.empty()){return nullptr;} // blocks exist.
-
     std::vector<tile*>blocks;
-   
-
-    
     for(int i = 0;i < SpaceTiles.size() ; i++)
         blocks.push_back(tailor(SpaceTiles.at(i),x,y,w,h));
-
     tile* blockTile = merge(blocks); 
     blockTile->setid(id);
-
-
-    // std::cout<<"tile:"<<*blockTile<<"\n";
-    // std::cout<<"lb:"<<*blockTile->lb()<<"\n";
-
-
-    // std::cout<<"getlft\n";
-    // auto LFT = getLeft(blockTile); 
-    // for(auto l:LFT){std::cout<<*l<<"\n";}
-    
-    // std::cout<<"merge lft\n";
-    // MergLeft(LFT);
-
-
-    // std::cout<<"get rgt\n";
-    // std::cout<<"rt = "<<*blockTile->rt()<<"\n";
-    // auto RGT = getRight(blockTile);
-    // for(auto r:RGT){std::cout<<*r<<"\n";}
-
-    //  std::cout<<"get top\n";
-    // auto TOP =getTop(blockTile);
-    // for(auto t:TOP){std::cout<<*t<<"\n";}
-
-    // std::cout<<"get bot\n";
-    // auto BOT = getBottom(blockTile);
-    // for(auto b:BOT){std::cout<<*b<<"\n";}
-
-    // std::cout<<"merge rgt\n";
-    // MergeRight(RGT);
-    // std::cout<<"merge done id:"<<id<<"\n";
+    MergLeft(getLeft(blockTile));
+    MergeRight(getRight(blockTile));
     Log->addLog(blockTile);
     return blockTile;
 }
@@ -355,7 +309,6 @@ std::vector<tile*> NeighborTraversal(tile*t,tile*nb,t_get*get,int v,cmp *comp,t_
 }
 std::vector<tile*>getNeighbor(tile*t){
     auto left = getLeft(t);     // from down to top
-    
     auto bottom = getBottom(t); // from left to right
     auto right = getRight(t);   // from top to down
     auto top = getTop(t);       // from right to left
@@ -381,31 +334,19 @@ int main()
     tile* b4 = InsertBlock(4,250,310,170,45);
     tile* b5 = InsertBlock(5,320,265,75,45);
 
-    // auto nbs5 = getNeighbor(b5);
-
-    // std::cout<<*b5->rt()<<"\n";
-    // std::cout<<*b5->tr()<<"\n";
-    // std::cout<<*b5->lb()<<"\n";
-    // std::cout<<*b5->bl()<<"\n";
-
     std::cout<<"blocks\n";
-    std::cout<<"\n"<<*b1<<"\n";
+    std::cout<<*b1<<"\n";
     std::cout<<*b2<<"\n";
     std::cout<<*b3<<"\n";
     std::cout<<*b4<<"\n";
     std::cout<<*b5<<"\n";
-
 
     auto nbs1 = getNeighbor(b1);
     auto nbs2 = getNeighbor(b2);
     auto nbs3 = getNeighbor(b3);
     auto nbs4 = getNeighbor(b4);
     auto nbs5 = getNeighbor(b5);
-    // // auto nbs4Bot = getBottom(b4);
-
-    
-    
-
+   
     std::cout<<"nb1:\n";
     std::for_each(nbs1.begin(),nbs1.end(),[](tile* t){std::cout<<*t<<"\n";});
     std::cout<<"nb2:\n";
@@ -416,45 +357,4 @@ int main()
     std::for_each(nbs4.begin(),nbs4.end(),[](tile* t){std::cout<<*t<<"\n";});
     std::cout<<"nb5:\n";
     std::for_each(nbs5.begin(),nbs5.end(),[](tile* t){std::cout<<*t<<"\n";});
-
-    // for(auto nb:nbs1)
-    // {
-    //     std::cout<<*nb<<"\n";
-    // }
-    //     for(auto nb:nbs2)
-    // {
-    //     std::cout<<*nb<<"\n";
-    // }
-
-    // tile* space = b1->tr();
-    // std::cout<<"space = "<<*space<<"\n";
-    // tile *t1 = Hsplit(space,200);
-    // tile *t2 = Hsplit(t1,80,false);
-
-    // std::cout<<"show split spaces\n";
-    // std::cout<<*t2->rt()<<"\n";
-    // std::cout<<*t2<<"\n";
-    // std::cout<<*t2->lb()<<"\n";
-
-    // std::cout<<"check ptr:\n";
-    // std::cout<<*b1->tr()<<"\n";
-    // std::cout<<*b2->bl()<<"\n";
-
-
-    // std::vector<tile*> continuousSpace;
-
-    // continuousSpace.push_back(t2->rt());
-    // continuousSpace.push_back(t2);
-    // continuousSpace.push_back(t2->lb());
-
-    // tile* mergeTile  = merge(continuousSpace);
-
-    // std::cout<<"after merge\n";
-    // std::cout<<*mergeTile<<"\n";
-
-
-    // std::cout<<"check  ptr:\n";
-    // std::cout<<*b1->tr()<<"\n";
-    // std::cout<<*b2->bl()<<"\n";
-   
 }

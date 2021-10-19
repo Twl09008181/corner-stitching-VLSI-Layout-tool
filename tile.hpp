@@ -1,6 +1,6 @@
 #ifndef TILE_HPP
-
 #define TILE_HPP
+
 
 #include <vector>
 #include <iostream>
@@ -33,7 +33,7 @@ struct tile
     tile* tr()const{return _tr;}
     tile* rt()const{return _rt;}
 
-    bool isSpace()const{return _id<0;}
+    bool isSpace()const{return _id < 0;}
 
 private:
     int _id; // if = -1 : space tile
@@ -49,7 +49,6 @@ std::ostream& operator<<(std::ostream&os,const tile &t);
 // (x,y) Point is allowed to lie on left/top edge of tile, but is not allowed to lie on right/bottom of tile.       
 // This property make one point only be contained by one tile.   
 tile* pointFinding(int x,int y);
-
 
 // left - bottom (x1,y1)   right top (x2,y2)
 // check if this area has any block by checkin maximal horizontal stripes.
@@ -93,7 +92,7 @@ inline void setrt(tile*t,tile *other){t->setrt(other);}
 
 
 
-
+// Set if can set.
 void setTr_if(tile* left,tile* right);
 void setRt_if(tile* bottom,tile* top);
 void setBl_if(tile* left,tile*right);
@@ -108,9 +107,11 @@ void setLb_if(tile* bottom,tile* top);
 inline bool nls(int a,int b){return a >= b;}
 // less than
 inline bool ls(int a,int b){return a < b;}
+// not greater than   
+inline bool ngt(int a,int b){return a <= b;}
+// greater than 
+inline bool gt(int a,int b){return a > b;}
 
-inline bool ngt(int a,int b){return a<=b;}
-inline bool gt(int a,int b){return a>b;}
 using cmp = decltype(nls);
 using t_get = decltype(getx);
 using t_set = decltype(setbl);
@@ -141,9 +142,9 @@ inline std::vector<tile*>getTop(tile*t)   {   return (t&&t->rt()) ? NeighborTrav
 inline std::vector<tile*>getBottom(tile*t){   return (t&&t->lb()) ? NeighborTraversal(t,t->lb(),getx,getx2(t),ls,tr) : std::vector<tile*>{}; }
 std::vector<tile*>getNeighbor(tile*t);
 
-void doMerge(std::vector<tile*>&tiles,t_move* next,t_move* precheck,t_get* v);
-inline void MergeRight(std::vector<tile*>&tiles){doMerge(tiles,lb,rt,getx);}
-inline void MergLeft(std::vector<tile*>&tiles){doMerge(tiles,rt,lb,getx2);}
+void doMerge(const std::vector<tile*>&tiles,t_move* next,t_move* precheck,t_get* v);
+inline void MergeRight(const std::vector<tile*>&tiles){doMerge(tiles,lb,rt,getx);}
+inline void MergLeft(const std::vector<tile*>&tiles){doMerge(tiles,rt,lb,getx2);}
 
 
 

@@ -66,7 +66,9 @@ tile* Hsplit(tile*t,int y,bool bottom = true);
 
 tile* InsertBlock(int id,int x,int y,int w,int h);
 
-std::vector<tile*>getNeighbor(tile*t);
+
+
+
 
 
 
@@ -95,7 +97,7 @@ inline bool nls(int a,int b){return a >= b;}
 inline bool ls(int a,int b){return a < b;}
 
 inline bool ngt(int a,int b){return a<=b;}
-
+inline bool gt(int a,int b){return a>b;}
 using cmp = decltype(nls);
 using t_get = decltype(getx);
 using t_set = decltype(setbl);
@@ -119,9 +121,16 @@ private:
 
 
 
+std::vector<tile*> NeighborTraversal(tile*t,tile*nb,t_get*get,int v,cmp *comp,t_move*next);
+inline std::vector<tile*>getLeft(tile*t)  {   return (t&&t->bl()) ? NeighborTraversal(t,t->bl(),gety,gety2(t),ls,rt) : std::vector<tile*>{}; }
+inline std::vector<tile*>getRight(tile*t) {   return (t&&t->tr()) ? NeighborTraversal(t,t->tr(),gety2,gety(t),gt,lb)   : std::vector<tile*>{}; }
+inline std::vector<tile*>getTop(tile*t)   {   return (t&&t->rt()) ? NeighborTraversal(t,t->rt(),getx2,getx(t),gt,bl)   : std::vector<tile*>{}; }
+inline std::vector<tile*>getBottom(tile*t){   return (t&&t->lb()) ? NeighborTraversal(t,t->lb(),getx,getx2(t),ls,tr) : std::vector<tile*>{}; }
+std::vector<tile*>getNeighbor(tile*t);
 
-
-
+void doMerge(std::vector<tile*>&tiles,t_move* next,t_move* precheck,t_get* v);
+inline void MergeRight(std::vector<tile*>&tiles){doMerge(tiles,lb,rt,getx);}
+inline void MergLeft(std::vector<tile*>&tiles){doMerge(tiles,rt,lb,getx2);}
 
 
 

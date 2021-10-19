@@ -3,7 +3,7 @@
 #include <iostream>
 #include <algorithm>
 #include <set>
-userlog *Log;
+extern userlog *Log;
 
 // show information of tile t , including id,x,y,w,h.    
 std::ostream& operator<<(std::ostream&os,const tile &t){
@@ -100,7 +100,7 @@ void setLb_if(tile* bottom,tile* top){
         top->setlb(bottom);
 }
 
-using set_if = decltype(setRt_if);
+
 
 
 void OneSideUpdate(set_if* s1,set_if*s2,tile* t,const std::vector<tile*>&neighbors,bool tIsLB){
@@ -114,22 +114,6 @@ void OneSideUpdate(set_if* s1,set_if*s2,tile* t,const std::vector<tile*>&neighbo
         }
     }
 }
-void updateRight(tile*t,const std::vector<tile*>&neighbors){
-    OneSideUpdate(setTr_if,setBl_if,t,neighbors,true);
-}
-
-void updateTop(tile*t,const std::vector<tile*>&neighbors){
-    OneSideUpdate(setRt_if,setLb_if,t,neighbors,true);
-}
-
-void updateLeft(tile*t,const std::vector<tile*>&neighbors){
-    OneSideUpdate(setTr_if,setBl_if,t,neighbors,false);
-}
-
-void updateBottom(tile*t,const std::vector<tile*>&neighbors){
-    OneSideUpdate(setRt_if,setLb_if,t,neighbors,false);
-}
-
 
 
 tile* Hsplit(tile*t,int y,bool bottom){
@@ -323,38 +307,3 @@ std::vector<tile*>getNeighbor(tile*t){
 
 
 
-int main()
-{
-    Log = new userlog(500,500);
-    
-
-    tile* b1 = InsertBlock(1,50,40,250,60);
-    tile* b2 = InsertBlock(2,55,250,50,150);
-    tile* b3 = InsertBlock(3,250,355,170,45);
-    tile* b4 = InsertBlock(4,250,310,170,45);
-    tile* b5 = InsertBlock(5,320,265,75,45);
-
-    std::cout<<"blocks\n";
-    std::cout<<*b1<<"\n";
-    std::cout<<*b2<<"\n";
-    std::cout<<*b3<<"\n";
-    std::cout<<*b4<<"\n";
-    std::cout<<*b5<<"\n";
-
-    auto nbs1 = getNeighbor(b1);
-    auto nbs2 = getNeighbor(b2);
-    auto nbs3 = getNeighbor(b3);
-    auto nbs4 = getNeighbor(b4);
-    auto nbs5 = getNeighbor(b5);
-   
-    std::cout<<"nb1:\n";
-    std::for_each(nbs1.begin(),nbs1.end(),[](tile* t){std::cout<<*t<<"\n";});
-    std::cout<<"nb2:\n";
-    std::for_each(nbs2.begin(),nbs2.end(),[](tile* t){std::cout<<*t<<"\n";});
-    std::cout<<"nb3:\n";
-    std::for_each(nbs3.begin(),nbs3.end(),[](tile* t){std::cout<<*t<<"\n";});
-    std::cout<<"nb4:\n";
-    std::for_each(nbs4.begin(),nbs4.end(),[](tile* t){std::cout<<*t<<"\n";});
-    std::cout<<"nb5:\n";
-    std::for_each(nbs5.begin(),nbs5.end(),[](tile* t){std::cout<<*t<<"\n";});
-}

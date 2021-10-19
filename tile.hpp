@@ -5,7 +5,7 @@
 #include <vector>
 #include <iostream>
 #include <set>
-
+#include <algorithm>
 struct tile
 {
     tile(int id,int x,int y,int w,int h,tile*bl=nullptr,tile*lb=nullptr,tile*tr=nullptr,tile*rt=nullptr)
@@ -116,7 +116,7 @@ using cmp = decltype(nls);
 using t_get = decltype(getx);
 using t_set = decltype(setbl);
 using t_move = decltype(bl);
-
+using set_if = decltype(setRt_if);
 
 class userlog{
 public:
@@ -134,19 +134,25 @@ private:
 
 
 
-
+// Neighbor getter 
 std::vector<tile*> NeighborTraversal(tile*t,tile*nb,t_get*get,int v,cmp *comp,t_move*next);
 inline std::vector<tile*>getLeft(tile*t)  {   return (t&&t->bl()) ? NeighborTraversal(t,t->bl(),gety,gety2(t),ls,rt) : std::vector<tile*>{}; }
-inline std::vector<tile*>getRight(tile*t) {   return (t&&t->tr()) ? NeighborTraversal(t,t->tr(),gety2,gety(t),gt,lb)   : std::vector<tile*>{}; }
-inline std::vector<tile*>getTop(tile*t)   {   return (t&&t->rt()) ? NeighborTraversal(t,t->rt(),getx2,getx(t),gt,bl)   : std::vector<tile*>{}; }
+inline std::vector<tile*>getRight(tile*t) {   return (t&&t->tr()) ? NeighborTraversal(t,t->tr(),gety2,gety(t),gt,lb) : std::vector<tile*>{}; }
+inline std::vector<tile*>getTop(tile*t)   {   return (t&&t->rt()) ? NeighborTraversal(t,t->rt(),getx2,getx(t),gt,bl) : std::vector<tile*>{}; }
 inline std::vector<tile*>getBottom(tile*t){   return (t&&t->lb()) ? NeighborTraversal(t,t->lb(),getx,getx2(t),ls,tr) : std::vector<tile*>{}; }
 std::vector<tile*>getNeighbor(tile*t);
 
+// Merge
 void doMerge(const std::vector<tile*>&tiles,t_move* next,t_move* precheck,t_get* v);
 inline void MergeRight(const std::vector<tile*>&tiles){doMerge(tiles,lb,rt,getx);}
 inline void MergLeft(const std::vector<tile*>&tiles){doMerge(tiles,rt,lb,getx2);}
 
-
+// OneSideUpdating
+void OneSideUpdate(set_if* s1,set_if*s2,tile* t,const std::vector<tile*>&neighbors,bool tIsLB);
+inline void updateRight(tile*t,const std::vector<tile*>&neighbors){OneSideUpdate(setTr_if,setBl_if,t,neighbors,true);}
+inline void updateTop(tile*t,const std::vector<tile*>&neighbors){OneSideUpdate(setRt_if,setLb_if,t,neighbors,true);}
+inline void updateLeft(tile*t,const std::vector<tile*>&neighbors){OneSideUpdate(setTr_if,setBl_if,t,neighbors,false);}
+inline void updateBottom(tile*t,const std::vector<tile*>&neighbors){OneSideUpdate(setRt_if,setLb_if,t,neighbors,false);}
 
 
 

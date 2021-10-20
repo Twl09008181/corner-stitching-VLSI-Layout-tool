@@ -17,7 +17,7 @@ void output(std::string filename,std::vector<tile*>&blocks,std::list<std::pair<i
 int main(int argc,char *argv[])
 {
 
-    if(argc!=3){std::cerr<<"please enter {program}.exe <input> <output>\n";exit(1);}
+    if(argc!=2){std::cerr<<"please enter {./Lab1}.exe <input> \n";exit(1);}
 
     std::list<tile*>blocks;
     std::list<std::pair<int,int>>FindingRec;
@@ -29,7 +29,7 @@ int main(int argc,char *argv[])
     std::sort(blocksVec.begin(),blocksVec.end(),[](tile*t1,tile*t2){return t1->id() < t2->id();});
 
     // output 
-    output(argv[2],blocksVec,FindingRec);
+    output("output.txt",blocksVec,FindingRec);
 
     return 0;
 }
@@ -101,7 +101,7 @@ void output(std::string filename,std::vector<tile*>&blocks,std::list<std::pair<i
         out << searchRec.first << " " << searchRec.second << "\n";
     }
 
-
+    std::cout<<"already save to "<<filename<<"\n";
     out.close();
 
 }
